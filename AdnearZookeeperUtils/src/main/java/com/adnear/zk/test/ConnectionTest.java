@@ -11,12 +11,12 @@ public class ConnectionTest {
 	
 	private static final int SESSION_TIMEOUT = 5000;
 	
-	public ZooKeeper connect(String hosts) throws IOException, InterruptedException { 
-		final CountDownLatch signal = new CountDownLatch(1);
+	public ZooKeeper connect(String hosts, int tickTime) throws IOException, InterruptedException { 
+		final CountDownLatch signal = new CountDownLatch(tickTime);
 		ZooKeeper zk = new ZooKeeper(hosts, SESSION_TIMEOUT, new Watcher() {
 			public void process(WatchedEvent event) {
-				if(event.getState() == Event.KeeperState.SyncConnected) {
-				 signal.countDown();
+				while(event.getState() == Event.KeeperState.SyncConnected) {
+					signal.countDown();
 				}
 			}
 		});
@@ -29,7 +29,7 @@ public class ConnectionTest {
 	public static void main(String[] args) {
 		ConnectionTest conn = new ConnectionTest();
 		try {
-			ZooKeeper zk = conn.connect(args[0]);
+			ZooKeeper zk = conn.connect(args[0], Integer.parseInt(args[1]));
 			System.out.printf("ZK state: %s\n", zk.getState());
 			zk.close();
 		} catch (IOException e) {
